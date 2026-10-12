@@ -27,7 +27,6 @@ namespace ApocAir
             var root = _rb != null ? _rb.transform : transform.root;
             _rotor = root.GetComponentInChildren<Rotor>();
             _prop = root.GetComponentInChildren<Propeller>();
-            if (_rb != null && Plugin.VerboseLogEntry.Value && _rb.GetComponent<ContactProbe>() == null) _rb.gameObject.AddComponent<ContactProbe>();
         }
 
         // the player sits under the vehicle (the Drive FSM parents them to its seat)
@@ -42,6 +41,8 @@ namespace ApocAir
         private void FixedUpdate()
         {
             if (_rb == null || !Plugin.VerboseLogEntry.Value) return;
+            // switched on while flying: start gathering contacts now
+            if (_rb.GetComponent<ContactProbe>() == null) _rb.gameObject.AddComponent<ContactProbe>();
             LateFixedLog();
             if (Time.time < _nextLog) return;
             _nextLog = Time.time + 2f;

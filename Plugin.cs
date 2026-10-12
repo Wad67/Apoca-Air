@@ -16,7 +16,7 @@ namespace ApocAir
     {
         public const string GUID = "com.burner.apocalypter.apocair";
         public const string NAME = "Apoc-Air";
-        public const string VERSION = "0.1.0";
+        public const string VERSION = "0.1.1";
 
         public static ManualLogSource Log;
         public static ConfigEntry<bool> VerboseLogEntry;
@@ -25,7 +25,7 @@ namespace ApocAir
         {
             Log = Logger;
             Config.Bind("General", "Apocasetter", true, "Show in the Apocasetter Mods menu.");
-            VerboseLogEntry = Config.Bind("Debug", "VerboseLog", false, "Extra diagnostics in the BepInEx log.");
+            VerboseLogEntry = Config.Bind("Debug", "VerboseLog", false, "Flight diagnostics in the BepInEx log. Applies at once.");
             new Harmony(GUID).PatchAll(typeof(Plugin).Assembly);
             Log.LogInfo(NAME + " " + VERSION + " loaded");
         }
