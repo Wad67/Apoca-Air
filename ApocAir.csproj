@@ -41,7 +41,8 @@
     <Reference Include="NWH.WheelController"><HintPath>$(ManagedDir)/NWH.WheelController.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="PlayMaker"><HintPath>$(ManagedDir)/PlayMaker.dll</HintPath><Private>false</Private></Reference>
     <!-- required mods: the engine on the crank (Engine Sim) and the airframes (SigmaMod) -->
-    <Reference Include="EngineSim"><HintPath>$(GameDir)/BepInEx/plugins/EngineSim/EngineSim.dll</HintPath><Private>false</Private></Reference>
+    <!-- optional at run time (Crank): built against the Engine Sim repo next to this one -->
+    <Reference Include="EngineSim"><HintPath>$(GameDir)/EngineSim/bin/Release/EngineSim.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="SigmaMod"><HintPath>$(GameDir)/BepInEx/plugins/SigmaMod/SigmaMod.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <Target Name="DeployToGame" AfterTargets="Build">

@@ -1,12 +1,11 @@
 using ApocAir.Aero;
-using EngineSim;
 using NWH.VehiclePhysics2;
 using UnityEngine;
 
 namespace ApocAir
 {
     // A fixed-pitch propeller on the engine's crankshaft. Thrust is along this object's forward (+Z), at its
-    // position. The engine turns it through Engine Sim's crank (Shaft): every engine step it takes the torque the
+    // position. The engine turns it through its crankshaft (Crank): every engine step it takes the torque the
     // air puts on it at that speed and airspeed (PropellerModel), so the engine settles where the prop's torque
     // matches its own. Unpowered in flight it windmills and turns the engine over. With no engine fitted it turns
     // on its own bearing, on the air's torque alone.
@@ -19,7 +18,7 @@ namespace ApocAir
     //   inertia             the prop's own, kg m2
     //   sense               +1 turns clockwise seen from behind, -1 anticlockwise
     //   visual              the prop's mesh object, spun about the thrust axis
-    public sealed class Propeller : MonoBehaviour, IShaftLoad
+    public sealed class Propeller : MonoBehaviour, ICrankLoad
     {
         public float radius = 0.459f, hubRadius = 0.06f;
         public int blades = 2;
@@ -44,17 +43,17 @@ namespace ApocAir
         private Rigidbody _rb;
         private VehicleController _vc;
         private float _omega, _thrust, _torque, _axial, _rho = 1.225f;
-        private float _lastShaftStep = -1f;
+        private float _lastCrankStep = -1f;
         private string _key;
 
         private void OnEnable()
         {
             _rb = GetComponentInParent<Rigidbody>();
             _vc = GetComponentInParent<VehicleController>();
-            Shaft.Attach(_vc, this);
+            Crank.Attach(_vc, this);
         }
 
-        private void OnDisable() => Shaft.Detach(_vc, this);
+        private void OnDisable() => Crank.Detach(_vc, this);
 
         private void Configure()
         {
@@ -72,7 +71,7 @@ namespace ApocAir
         public float Torque(float w, float dt, out float slope)
         {
             Configure();
-            _lastShaftStep = Time.fixedTime;
+            _lastCrankStep = Time.fixedTime;
             float r = Mathf.Max(0.01f, ratio);
             _omega = w / r;
             Air(_omega, out _thrust, out _torque);
@@ -96,7 +95,7 @@ namespace ApocAir
             _axial = Vector3.Dot(_rb.GetPointVelocity(transform.position), axis);
             _rho = ApocAir.Air.Density(transform.position);
             // no engine stepping it (none fitted): a free prop on its bearing
-            if (Time.fixedTime - _lastShaftStep > 2.5f * Time.fixedDeltaTime)
+            if (Time.fixedTime - _lastCrankStep > 2.5f * Time.fixedDeltaTime)
             {
                 Air(_omega, out _thrust, out _torque);
                 _omega = Mathf.Max(0f, _omega - _torque / Mathf.Max(1e-3f, inertia) * Time.fixedDeltaTime);

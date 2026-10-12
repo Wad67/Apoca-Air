@@ -5,7 +5,7 @@ a small **bush plane** is planned.
 
 The airframes are SigmaMod templates and bring what makes them aircraft: the gyro's wheels, rotor, pusher propeller
 and tail. You fit the rest as on any vehicle: engine, radiator, seat, gauges. The engine drives the propeller
-directly through its crankshaft; there is no gearbox in the way. Spawn the gyroplane with Apocaspawner.
+directly through its crankshaft; there is no gearbox in the way. Engine Sim is optional. Spawn the gyroplane with Apocaspawner.
 
 ## How it flies
 
@@ -66,7 +66,7 @@ rises), and this one has no tailplane, so flying it by keyboard without the stab
 
 Components a SigmaMod template's `.json` adds and sets (fields are listed at the top of each file in `Components/`):
 
-- `ApocAir.Propeller`: a fixed-pitch prop on Engine Sim's crankshaft, thrust along the object's forward.
+- `ApocAir.Propeller`: a fixed-pitch prop on the engine's crankshaft, thrust along the object's forward.
 - `ApocAir.Rotor`: a free gyroplane rotor; the stick tilts its head.
 - `ApocAir.Surface`: a wing, tailplane or fin, with an optional control surface; the part of it in a prop's
   slipstream sees the faster air.
@@ -79,7 +79,8 @@ Components a SigmaMod template's `.json` adds and sets (fields are listed at the
 ## Requirements
 
 - BepInEx 5
-- Engine Sim 1.5.0 or later, which drives the crankshaft the propeller sits on
+- Engine Sim 1.5.0 or later is optional. With it, the propeller sits on its simulated engine's crankshaft; without
+  it, on the game's own engine model
 - SigmaMod 0.3.1 or later, which builds the airframes
 - Apocaspawner, to spawn one
 
@@ -93,5 +94,5 @@ Unzip the release into `Apocalypter/BepInEx/plugins`, so that `BepInEx/plugins/A
 dotnet build -c Release
 ```
 
-Builds against the game's own assemblies and the installed Engine Sim and SigmaMod, and deploys to
+Builds against the game's own assemblies, the Engine Sim repo's build (`../EngineSim`) and the installed SigmaMod, and deploys to
 `BepInEx/plugins/ApocAir/`. Set `GameDir` if the repo is not in the game folder.
