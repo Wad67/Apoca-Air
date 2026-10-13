@@ -34,6 +34,7 @@ namespace ApocAir.Aero
         public Airfoil Airfoil = new Airfoil { LiftSlope = 5.73, ZeroLiftAngle = -1.0 * Airfoil.Deg, StallAngle = 13 * Airfoil.Deg, Cd0 = 0.009, DragRise = 0.3 };
         public int RadialStations = 10;
         public int AzimuthSteps = 24;
+        public int MaxIterations = 30;          // per Solve; warm-started, so a few per physics step converge over steps
         public double MaxFlap = 10 * Airfoil.Deg; // rad, where the hub's stops limit the teeter
         public double FlapFrom = 0;              // rad/s: below it the blades are held unflapped (0: free at any speed)
 
@@ -45,6 +46,9 @@ namespace ApocAir.Aero
             public double Inflow;           // m/s induced down through the disc
             public double A1, B1;           // rad, tip-path tilt back and sideways
         }
+
+        // iterations the last Solve took (diagnostics)
+        public int LastIterations;
 
         // warm start: the last call's inflow and flapping
         private double _vi, _a1, _b1;
@@ -60,18 +64,25 @@ namespace ApocAir.Aero
             if (!flapping) { a1 = 0; b1 = 0; }
             double vip = Math.Sqrt(wind.X * wind.X + wind.Y * wind.Y);
             Elements(wind, omega, rho, vi, a1, b1, out var r0);
-            for (int it = 0; it < 30; it++)
+            int iters = 0;
+            double j11 = 0, j12 = 0, j21 = 0, j22 = 0, det = 0;
+            for (int it = 0; it < MaxIterations; it++)
             {
+                iters++;
                 double ma = 0, mb = 0;
                 if (flapping)
                 {
-                    // Newton on the once-per-rev flap moment (cos, sin parts) over the tilt (a1, b1)
-                    const double d = 0.004;
-                    Elements(wind, omega, rho, vi, a1 + d, b1, out var ra);
-                    Elements(wind, omega, rho, vi, a1, b1 + d, out var rb);
-                    double j11 = (ra.Mc - r0.Mc) / d, j12 = (rb.Mc - r0.Mc) / d;
-                    double j21 = (ra.Ms - r0.Ms) / d, j22 = (rb.Ms - r0.Ms) / d;
-                    double det = j11 * j22 - j12 * j21;
+                    // Newton on the once-per-rev flap moment (cos, sin parts) over the tilt (a1, b1); the Jacobian is
+                    // worked out once per call and kept for its iterations (it changes little over one step)
+                    if (it == 0)
+                    {
+                        const double d = 0.004;
+                        Elements(wind, omega, rho, vi, a1 + d, b1, out var ra);
+                        Elements(wind, omega, rho, vi, a1, b1 + d, out var rb);
+                        j11 = (ra.Mc - r0.Mc) / d; j12 = (rb.Mc - r0.Mc) / d;
+                        j21 = (ra.Ms - r0.Ms) / d; j22 = (rb.Ms - r0.Ms) / d;
+                        det = j11 * j22 - j12 * j21;
+                    }
                     if (Math.Abs(det) > 1e-12)
                     {
                         ma = -(j22 * r0.Mc - j12 * r0.Ms) / det;
@@ -91,6 +102,7 @@ namespace ApocAir.Aero
                 if (Math.Abs(dv) < 1e-3 && Math.Abs(ma) < 1e-5 && Math.Abs(mb) < 1e-5) break;
             }
             _vi = vi; _a1 = a1; _b1 = b1;
+            LastIterations = iters;
             return new Result { Force = r0.Force, Torque = r0.Torque, Thrust = r0.Thrust, Inflow = vi, A1 = a1, B1 = b1 };
         }
 
@@ -122,11 +134,11 @@ namespace ApocAir.Aero
                     double un = up - beta * windR - r * betaDot;      // air up through the flapped blade
                     double w2 = ut * ut + un * un;
                     if (w2 < 1e-9) continue;
-                    double phi = Math.Atan2(un, ut);
+                    double phi = Math.Atan2(un, ut), wmag = Math.Sqrt(w2);
                     double theta = Pitch + Twist * (r / Radius - 0.75);
                     Airfoil.At(theta + phi, out double cl, out double cd);
                     double q = 0.5 * rho * w2 * Chord * dr;
-                    double sphi = Math.Sin(phi), cphi = Math.Cos(phi);
+                    double sphi = un / wmag, cphi = ut / wmag;
                     double ft = q * (cl * sphi - cd * cphi);           // along the blade's motion
                     double fn = q * (cl * cphi + cd * sphi);           // normal to the flapped blade
                     // normal of the flapped blade: z - beta er

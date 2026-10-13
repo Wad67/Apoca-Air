@@ -44,7 +44,8 @@ namespace ApocAir
         private VehicleController _vc;
         private float _omega, _thrust, _torque, _axial, _rho = 1.225f;
         private float _lastCrankStep = -1f;
-        private string _key;
+        private float _kRadius = -1f, _kHub, _kChord, _kTaper, _kPitch;
+        private int _kBlades;
 
         private void OnEnable()
         {
@@ -57,9 +58,9 @@ namespace ApocAir
 
         private void Configure()
         {
-            string key = $"{radius}|{hubRadius}|{blades}|{chord}|{taper}|{pitch}";
-            if (key == _key) return;
-            _key = key;
+            // only re-tabulates when a setting changed (no allocation: this runs every engine step)
+            if (radius == _kRadius && hubRadius == _kHub && blades == _kBlades && chord == _kChord && taper == _kTaper && pitch == _kPitch) return;
+            _kRadius = radius; _kHub = hubRadius; _kBlades = blades; _kChord = chord; _kTaper = taper; _kPitch = pitch;
             _model.Radius = radius; _model.HubRadius = hubRadius; _model.Blades = blades;
             _model.Chord = chord; _model.Taper = taper; _model.Pitch = pitch;
             _model.Tabulate();

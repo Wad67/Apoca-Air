@@ -22,6 +22,7 @@ namespace ApocAir
 
         private void OnEnable()
         {
+            useGUILayout = false;   // no GUILayout here: skip Unity's layout pass
             _rb = GetComponentInParent<Rigidbody>();
             _vc = GetComponentInParent<VehicleController>();
             var root = _rb != null ? _rb.transform : transform.root;
@@ -109,14 +110,35 @@ namespace ApocAir
             Plugin.Log.LogInfo(sb.ToString());
         }
 
+        // the panel's text is rebuilt five times a second and kept between (OnGUI runs several times a frame)
+        private readonly GUIContent _text = new GUIContent();
+        private readonly System.Text.StringBuilder _sb = new System.Text.StringBuilder(512);
+        private float _nextText, _height;
+        private string _controlsText, _controlsFor;
+
         private void OnGUI()
         {
             if (_rb == null || !Seated()) return;
             if (_style == null)
                 _style = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = new Color(1f, 0.95f, 0.8f) } };
+            const float w = 380f;
+            if (Time.unscaledTime >= _nextText || _text.text == null)
+            {
+                _nextText = Time.unscaledTime + 0.2f;
+                _text.text = BuildText();
+                _height = _style.CalcHeight(_text, w);
+            }
+            GUI.color = new Color(0f, 0f, 0f, 0.5f);
+            GUI.DrawTexture(new Rect(10f, 10f, w + 16f, _height + 12f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(18f, 16f, w, _height), _text, _style);
+        }
 
+        private string BuildText()
+        {
+            var sb = _sb;
+            sb.Length = 0;
             float speed = _rb.velocity.magnitude;
-            var sb = new System.Text.StringBuilder();
             sb.Append($"Airspeed {speed:0.0} m/s ({speed * 3.6f:0} km/h)   climb {_rb.velocity.y:+0.0;-0.0} m/s\n");
             sb.Append($"Height {Air.Height(_rb.position):0} m   air {Air.Temperature:0} C, {Air.Density(_rb.position):0.000} kg/m3\n");
             if (_vc != null)
@@ -131,14 +153,15 @@ namespace ApocAir
                 sb.Append($"Stick {(_rotor.useMouse ? "mouse" : "keys")}   stabiliser {(_rotor.stabilise ? (_rotor.Airborne ? "holding" : "on (ground)") : "off")}   roll trim {_rotor.RollTrim * 100f:+0;-0} %\n");
             }
             sb.Append('\n');
-            foreach (var line in controls.Split('|')) sb.Append(line.Trim()).Append('\n');
-
-            var text = new GUIContent(sb.ToString());
-            float w = 380f, h = _style.CalcHeight(text, w);
-            GUI.color = new Color(0f, 0f, 0f, 0.5f);
-            GUI.DrawTexture(new Rect(10f, 10f, w + 16f, h + 12f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            GUI.Label(new Rect(18f, 16f, w, h), text, _style);
+            if (_controlsFor != controls)
+            {
+                _controlsFor = controls;
+                var c = new System.Text.StringBuilder();
+                foreach (var line in controls.Split('|')) c.Append(line.Trim()).Append('\n');
+                _controlsText = c.ToString();
+            }
+            sb.Append(_controlsText);
+            return sb.ToString();
         }
     }
 

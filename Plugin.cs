@@ -17,7 +17,7 @@ namespace ApocAir
     {
         public const string GUID = "com.burner.apocalypter.apocair";
         public const string NAME = "Apoc-Air";
-        public const string VERSION = "0.1.2";
+        public const string VERSION = "0.1.3";
 
         public static ManualLogSource Log;
         public static ConfigEntry<bool> VerboseLogEntry;

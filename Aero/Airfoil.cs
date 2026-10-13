@@ -44,6 +44,7 @@ namespace ApocAir.Aero
 
         public static double Wrap(double a)
         {
+            if (a > -Math.PI && a <= Math.PI) return a;   // the usual case, no division
             a %= 2 * Math.PI;
             if (a > Math.PI) a -= 2 * Math.PI;
             else if (a <= -Math.PI) a += 2 * Math.PI;

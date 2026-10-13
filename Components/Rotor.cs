@@ -65,7 +65,7 @@ namespace ApocAir
         public float stabRollTrim = 0.4f, stabTrimLimit = 0.6f, stabSlip = 2f, stabYawDamp = 0.6f;
         public float pedals;
         public Surface[] rudders = new Surface[0];
-        public int radialStations = 10, azimuthSteps = 24;
+        public int radialStations = 8, azimuthSteps = 16;
         public bool handPush;
         public float handImpulse = 15f, handSpeed = 10f;
 
@@ -103,6 +103,9 @@ namespace ApocAir
             _model.Radius = radius; _model.RootCutout = rootCutout; _model.Blades = blades; _model.Chord = chord;
             _model.Pitch = pitch * Airfoil.Deg; _model.Twist = twist * Airfoil.Deg; _model.Sense = sense >= 0 ? 1 : -1;
             _model.RadialStations = Mathf.Max(2, radialStations); _model.AzimuthSteps = Mathf.Max(4, azimuthSteps);
+            // a few iterations each physics step, carried over to the next: the flapping and inflow settle over steps,
+            // as they do over a real rotor's revolutions, and a state that won't converge can't eat the frame
+            _model.MaxIterations = 4;
         }
 
         private void FixedUpdate()
@@ -170,6 +173,14 @@ namespace ApocAir
             Vector3 hub = head.position, fx = head.forward, fy = head.right, fz = head.up;
             Vector3 air = -_rb.GetPointVelocity(hub);
             var wind = new Vec3(Vector3.Dot(air, fx), Vector3.Dot(air, fy), Vector3.Dot(air, fz));
+            // a stopped rotor in still air: nothing to work out
+            if (_omega < 0.5f && air.sqrMagnitude < 0.09f)
+            {
+                LastForce = Vector3.zero; LastPoint = hub; RotorThrust = 0f;
+                _disc = fz;
+                _omega = 0f;   // the bearing's friction would have it stopped within a moment anyway
+                return;
+            }
             var r = _model.Solve(wind, _omega, ApocAir.Air.Density(hub));
             Vector3 force = fx * (float)r.Force.X + fy * (float)r.Force.Y + fz * (float)r.Force.Z;
 

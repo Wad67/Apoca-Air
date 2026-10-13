@@ -17,6 +17,7 @@ static class Program
         if (what == "all" || what == "rotor") Rotor(rho);
         if (what == "all" || what == "gyro") Gyro(rho);
         if (what == "time") Time(rho);
+        if (what == "cases") Cases(rho);
         if (what == "spinup") SpinUp(rho);
         if (what == "liftoff") LiftOff(rho);
         if (what == "prop2")
@@ -184,6 +185,32 @@ static class Program
                 }
                 Console.WriteLine();
             }
+        }
+    }
+
+    // iterations and cost per solve in the states a gyro spends its time in, warm-started step after step
+    static void Cases(double rho)
+    {
+        var cases = new (string, double, double, double)[] {
+            ("parked, stopped rotor", 0, 0, 0), ("parked, rotor 120 rpm", 0, 0, 120), ("taxi 5 m/s, 40 rpm", 5, 10, 40),
+            ("taxi 10 m/s, 200 rpm", 10, 15, 200), ("cruise 30 m/s, 600 rpm", 30, 8, 600) };
+        foreach (var (st, az, cap) in new[] { (10, 24, 30), (8, 16, 4) })
+        {
+        Console.WriteLine($" {st} x {az}, at most {cap} iterations a step:");
+        foreach (var (name, v, disc, rpm) in cases)
+        {
+            var r = new RotorModel { Radius = 2.7, RootCutout = 0.3, Chord = 0.2, RadialStations = st, AzimuthSteps = az, MaxIterations = cap };
+            RotorModel.Result last = default;
+            double a = disc * Airfoil.Deg; int total = 0, n = 500;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < n; i++)
+            {
+                double jitter = 0.02 * Math.Sin(i * 0.7);
+                last = r.Solve(new Vec3(-v * Math.Cos(a) + jitter, jitter, v * Math.Sin(a) + jitter), rpm * Math.PI / 30, rho);
+                total += r.LastIterations;
+            }
+            Console.WriteLine($"  {name,-24} {total / (double)n,5:0.0} iterations, {sw.Elapsed.TotalMilliseconds / n:0.000} ms per solve; thrust {last.Thrust:0} N, torque {last.Torque:0.0} N m, flap {last.A1 / Airfoil.Deg:0.0}/{last.B1 / Airfoil.Deg:0.0} deg");
+        }
         }
     }
 
