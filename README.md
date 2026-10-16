@@ -62,9 +62,17 @@ much), and in the air it works the rudder on top of your pedals to keep the side
 A gyroplane is unstable in pitch on its own (the rotor's force swings further ahead of the centre of mass as the nose
 rises), and this one has no tailplane, so flying it by keyboard without the stabiliser is hard.
 
+With nobody in the seat the throttle is shut, the wheel brakes are on and the stabiliser is off, so a parked
+gyroplane stays parked. The stabiliser comes back on when you sit down.
+
 ## Building aircraft
 
-Components a SigmaMod template's `.json` adds and sets (fields are listed at the top of each file in `Components/`):
+The gyroplane is a SigmaMod 2.0 Lua asset: `sigma_assets/apocagyro.lua`, built from SigmaMod's parts library and
+Apoc-Air's own `sigma_assets/apocair/flight.lua` (`require "apocair.flight"`), which holds the flight controls: keys
+and mouse to the stick, pedals and throttle, the hand shove and the stabiliser, taken over while someone is in the
+seat. Another aircraft can require it the same way.
+
+Components a SigmaMod template adds and sets (fields are listed at the top of each file in `Components/`):
 
 - `ApocAir.Propeller`: a fixed-pitch prop on the engine's crankshaft, thrust along the object's forward.
 - `ApocAir.Rotor`: a free gyroplane rotor; the stick tilts its head.
@@ -81,7 +89,7 @@ Components a SigmaMod template's `.json` adds and sets (fields are listed at the
 - BepInEx 5
 - Engine Sim 1.5.0 or later is optional. With it, the propeller sits on its simulated engine's crankshaft; without
   it, on the game's own engine model
-- SigmaMod 0.3.1 or later, which builds the airframes
+- SigmaMod 2.0.0 or later, which builds the airframes
 - Apocaspawner, to spawn one
 
 ## Install
